@@ -10,6 +10,24 @@ function App() {
   const [loading, setLoading] = useState(false);
   const codeReaderRef = useRef(null);
 
+  const fetchBookInfo = async (isbn) => {
+    try {
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+      const data = await res.json();
+
+      if (data.totalItems > 0) {
+        setBookInfo(data.items[0].volumeInfo);
+        console.log("📚 Book Info:", data.items[0].volumeInfo);
+      } else {
+        console.log("❌ No book found for ISBN:", isbn);
+      }
+    } catch (err) {
+      console.error("🔴 Error fetching from Google Books API:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const startScanner = () => {
     if (!videoRef.current) return;
 
@@ -26,40 +44,23 @@ function App() {
           const isbn = result.getText();
           setBarcode(isbn);
           setLoading(true);
-
           controls.stop();
-
-          fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`)
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.totalItems > 0) {
-                const book = data.items[0].volumeInfo;
-                setBookInfo(book);
-                console.log("📚 Book Info:", data.items[0].volumeInfo);
-              } else {
-                console.log("❌ No book found for ISBN:", isbn);
-              }
-            })
-            .catch((err) => {
-              console.error("🔴 Error fetching from Google Books API:", err);
-            })
-            .finally(() => {
-              setLoading(false)
-            });
+          fetchBookInfo(isbn);
         }
 
         if (err && err.name !== 'NotFoundException') {
           console.error("Scan error:", err);
           }
-        }
-      );
+        });
     };
+
   useEffect(() => {
     requestAnimationFrame(startScanner);
 
     return () => {
       if (controlsRef.current) {
-      controlsRef.current.stop(); // Stop the scanner on unmount
+      controlsRef.current.stop();
+      controlsRef.current = null // Stop the scanner on unmount
       }
     };
   }, []);
