@@ -13,8 +13,10 @@ code {
 } */
 
 video {
-  width: 100%;
+  width: 30%;
   height: auto;
   object-fit: cover;
   background-color: black;
+  border: 2px solid #ccc;
+  border-radius: 8px;
 }
