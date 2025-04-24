@@ -55,15 +55,42 @@ function App() {
     };
 
   useEffect(() => {
+    const codeReader = new BrowserMultiFormatReader();
+    codeReaderRef.current = codeReader;
+
+    const startScanner = () => {
+      if (!videoRef.current) return;
+
+      codeReader.decodeFromVideoDevice(null, videoRef.current, (result, err, controls) => {
+        if (!controlsRef.current) {
+          controlsRef.current = controls;
+        }
+
+        if (result && !barcode) {
+          const isbn = result.getText();
+          console.log("✅ Scanned ISBN:", isbn);
+          setBarcode(isbn);
+          setLoading(true);
+          controls.stop();
+          fetchBookInfo(isbn);
+        }
+
+        if (err && err.name !== 'NotFoundException') {
+          console.error("⚠️ Scan error:", err);
+        }
+      });
+    };
+
     requestAnimationFrame(startScanner);
 
     return () => {
       if (controlsRef.current) {
-      controlsRef.current.stop();
-      controlsRef.current = null // Stop the scanner on unmount
+        controlsRef.current.stop();
+        controlsRef.current = null;
       }
     };
-  }, []);
+
+  }, [barcode]);
 
   const handleScanAgain = () => {
     // Reset states
